@@ -14,6 +14,7 @@ st.set_page_config(
 # Make sure your FastAPI server is running on this port!
 API_URL_MASK = "http://127.0.0.1:8000/api/v1/mask-aadhaar-image"
 API_URL_POLICY = "http://127.0.0.1:8000/api/v1/check-policy"
+API_URL_TEXT = "http://127.0.0.1:8000/api/v1/mask-data"
 
 # --- Main Dashboard UI ---
 st.title("🛡️ DPDP Act & Aadhaar Compliance Engine")
@@ -24,8 +25,8 @@ and auditing corporate data policies in real-time.
 """)
 st.divider()
 
-# Create two tabs for the two different features
-tab1, tab2 = st.tabs(["📸 Visual Aadhaar Masking (OCR)", "⚖️ Legal Policy Auditor (RAG)"])
+# Create three tabs for the three different features
+tab1, tab2, tab3 = st.tabs(["📸 Image Masking (OCR)", "⚖️ Legal Auditor (RAG)", "📝 Text PII Masking (NLP)"])
 
 # ==========================================
 # TAB 1: IMAGE MASKING
@@ -100,6 +101,40 @@ with tab2:
                         # Use markdown to render the bolding and bullet points from Gemini
                         st.markdown(result["legal_analysis"])
                         
+                    else:
+                        st.error(f"API Error: {response.status_code}")
+                except requests.exceptions.ConnectionError:
+                    st.error("Could not connect to the Backend API. Is your FastAPI server running?")
+
+# ==========================================
+# TAB 3: TEXT PII MASKING
+# ==========================================
+with tab3:
+    st.header("Unstructured Text Data Minimization")
+    st.write("Paste raw text containing sensitive information. The NLP engine will automatically detect and redact Aadhaar numbers, names, and biometrics.")
+    
+    raw_text = st.text_area(
+        "Enter Raw Customer Data:", 
+        height=150,
+        placeholder="e.g., Customer Ramesh Kumar provided his fingerprint and Aadhaar number 9821 4356 7012 for the loan."
+    )
+    
+    if st.button("Sanitize Text", type="primary"):
+        if raw_text.strip() == "":
+            st.warning("Please enter some text to sanitize.")
+        else:
+            with st.spinner("Processing through NLP Masking Engine..."):
+                payload = {"user_text": raw_text}
+                
+                try:
+                    response = requests.post(API_URL_TEXT, json=payload)
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        st.success(f"Rule Applied: {result['dpdp_rule_applied']}")
+                        
+                        st.subheader("Sanitized Output")
+                        st.info(result["sanitized_data"])
                     else:
                         st.error(f"API Error: {response.status_code}")
                 except requests.exceptions.ConnectionError:
