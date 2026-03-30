@@ -13,3 +13,5 @@ pypdf
 opencv-python-headless 
 pytesseract 
 python-multipart
+streamlit 
+requests
